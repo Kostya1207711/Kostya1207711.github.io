@@ -1,319 +1,819 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-  <title>Basic Tetris HTML Game</title>
-  <meta charset="UTF-8">
-  <style>
-  html, body {
-    height: 100%;
-    margin: 0;
-  }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Розклад уроків</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Unbounded:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#0f0f0f;--surface:#191919;--surface2:#222;--border:#2e2e2e;--border2:#3d3d3d;--accent:#c8f060;--text:#f0f0f0;--muted:#888;--danger:#ff4d4d;--mono:'JetBrains Mono',monospace;--head:'Unbounded',sans-serif;--inp-bg:transparent;--inp-hover:#222;--inp-focus:#191919;--th-color:#c8f060;--row-hover:#191919}
+body.light{--bg:#f5f5f0;--surface:#fff;--surface2:#f0f0ea;--border:#e0e0d8;--border2:#ccc;--text:#111;--muted:#777;--danger:#d93030;--inp-bg:transparent;--inp-hover:#f0f0ea;--inp-focus:#fff;--th-color:#3a7200;--row-hover:#f9f9f4}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;padding:2rem 1rem 5rem;transition:background .2s,color .2s}
 
-  body {
-    background: black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+header{max-width:1200px;margin:0 auto 1.5rem;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--border2);padding-bottom:1rem;gap:1rem;flex-wrap:wrap}
+.logo-label{font-family:var(--head);font-size:10px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:6px}
+h1{font-family:var(--head);font-size:clamp(18px,3.5vw,28px);font-weight:600;letter-spacing:-.02em;line-height:1}
+.badge{display:inline-block;background:var(--accent);color:#0f0f0f;font-family:var(--head);font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:2px;margin-left:8px;vertical-align:middle;position:relative;top:-2px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.week-tabs{display:flex;gap:0;border:1px solid var(--border2);border-radius:5px;overflow:hidden}
+.week-tab{font-family:var(--mono);font-size:12px;padding:7px 16px;background:transparent;border:none;color:var(--muted);cursor:pointer;transition:background .12s,color .12s;letter-spacing:.04em}
+.week-tab.active{background:var(--accent);color:#0f0f0f;font-weight:600}
+.btn{font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:4px;border:1px solid var(--border2);cursor:pointer;transition:all .15s;letter-spacing:.04em;white-space:nowrap;background:transparent;color:var(--muted)}
+.btn:hover{color:var(--text);background:var(--surface2)}
+.btn-primary{background:var(--accent);color:#0f0f0f;border-color:var(--accent);font-weight:600}
+.btn-primary:hover{background:#d8ff70;border-color:#d8ff70;color:#0f0f0f}
+.btn-accent{color:var(--accent);border-color:var(--accent);background:transparent}
+.btn-accent:hover{background:rgba(200,240,96,.08)}
+.btn-icon{padding:8px 10px;font-size:15px}
 
-  canvas {
-    border: 1px solid white;
-  }
-  </style>
+.export-wrap{position:relative}
+.export-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;overflow:hidden;min-width:158px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.export-menu.open{display:block}
+.export-menu button{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 16px;cursor:pointer;transition:background .12s;text-align:left;white-space:nowrap}
+.export-menu button:hover{background:var(--surface)}
+.export-menu hr{border:none;border-top:1px solid var(--border);margin:0}
+
+/* ── reminder bar ── */
+#reminder-bar{max-width:1200px;margin:0 auto 1.2rem;display:none;flex-direction:column;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;overflow:hidden}
+#reminder-bar.show{display:flex}
+.rem-main{display:flex;align-items:center;gap:12px;padding:10px 16px}
+.rem-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+#rem-text{font-size:12px;color:var(--text);flex:1;letter-spacing:.04em}
+.rem-actions{display:flex;gap:4px;align-items:center}
+.rem-icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:3px 7px;border-radius:3px;transition:color .12s,background .12s;line-height:1}
+.rem-icon-btn:hover{color:var(--text);background:var(--border)}
+
+/* settings panel */
+#rem-settings{display:none;border-top:1px solid var(--border);padding:12px 16px;gap:14px;align-items:center;flex-wrap:wrap}
+#rem-settings.open{display:flex}
+.rsec{display:flex;align-items:center;gap:8px}
+.rsec-label{font-size:11px;color:var(--muted);letter-spacing:.08em;white-space:nowrap}
+.rchips{display:flex;gap:5px}
+.rchip{font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .12s;letter-spacing:.04em}
+.rchip.on{background:var(--accent);color:#0f0f0f;border-color:var(--accent);font-weight:600}
+/* sound toggle */
+.stoggle{display:flex;align-items:center;gap:8px;margin-left:auto}
+.stoggle-label{font-size:11px;color:var(--muted);letter-spacing:.08em}
+.sw{position:relative;width:36px;height:20px;display:inline-block;cursor:pointer;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw-track{position:absolute;inset:0;background:var(--border2);border-radius:20px;transition:background .2s}
+.sw input:checked+.sw-track{background:var(--accent)}
+.sw-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s;pointer-events:none}
+.sw input:checked~.sw-thumb{left:19px}
+
+/* alert toast */
+.alert-toast{position:fixed;top:20px;right:20px;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:12px 18px;max-width:320px;z-index:9998;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateX(360px);transition:transform .3s}
+.alert-toast.show{transform:translateX(0)}
+.alert-toast-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.alert-toast-body{flex:1}
+.alert-toast-title{font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.06em;margin-bottom:3px}
+.alert-toast-msg{font-size:11px;color:var(--text);line-height:1.5}
+.alert-toast-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0}
+.alert-toast-close:hover{color:var(--text)}
+
+main{max-width:1200px;margin:0 auto}
+.table-wrap{overflow-x:hidden}
+table{width:100%;border-collapse:collapse;min-width:0}
+thead th{font-family:var(--head);font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:var(--th-color);padding:0 6px 10px;text-align:center;border-bottom:1px solid var(--border2)}
+thead th:first-child,thead th:last-child{color:var(--muted)}
+thead .day-header{font-family:var(--head);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--th-color);border-bottom:1px solid var(--border2);text-align:center;padding-bottom:4px}
+thead .day-header.today{color:#0f0f0f;background:var(--accent);border-radius:4px 4px 0 0;border-bottom-color:var(--accent)}
+thead .sub-headers th.today{background:rgba(200,240,96,.10);border-bottom-color:var(--accent)}
+tbody td.today-col{background:rgba(200,240,96,.05)}
+tbody tr:hover td.today-col{background:rgba(200,240,96,.10)}
+thead .sub-headers th{font-size:9px;color:var(--muted);font-weight:400;letter-spacing:.08em;padding:3px 4px 8px;border-bottom:1px solid var(--border2)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--row-hover)}
+tbody td{padding:3px 3px;text-align:center;vertical-align:middle}
+tbody td.num{font-size:11px;color:var(--muted);font-weight:600;width:32px}
+tbody td.time-cell{width:82px}
+tbody td.del-cell{width:32px}
+input.cell-inp{background:var(--inp-bg);border:1px solid transparent;border-radius:3px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 5px;width:100%;outline:none;transition:border-color .12s,background .12s;caret-color:var(--accent)}
+input.cell-inp::placeholder{color:var(--border2)}
+input.cell-inp:hover{border-color:var(--border2);background:var(--inp-hover)}
+input.cell-inp:focus{border-color:var(--accent);background:var(--inp-focus)}
+input.cell-inp.teacher{font-size:10px;color:var(--muted)}
+input.cell-inp.room{font-size:10px;color:var(--muted);width:100%}
+input[type="time"]{background:var(--inp-bg);border:1px solid transparent;border-radius:3px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 5px;width:100%;outline:none;transition:border-color .12s,background .12s;text-align:center;caret-color:var(--accent)}
+input[type="time"]:hover{border-color:var(--border2);background:var(--inp-hover)}
+input[type="time"]:focus{border-color:var(--accent);background:var(--inp-focus)}
+input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(.4);cursor:pointer}
+body.light input[type="time"]::-webkit-calendar-picker-indicator{filter:none}
+.del{background:none;border:none;cursor:pointer;color:var(--border2);font-size:14px;line-height:1;padding:3px 5px;border-radius:4px;transition:color .15s,background .15s}
+.del:hover{color:var(--danger);background:rgba(255,77,77,.08)}
+.footer-bar{max-width:1200px;margin:1.2rem auto 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.counter{font-size:11px;color:var(--muted);letter-spacing:.08em}
+.counter strong{color:var(--accent)}
+.flash{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#0f0f0f;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.08em;padding:10px 20px;border-radius:4px;transform:translateY(60px);opacity:0;transition:transform .3s,opacity .3s;pointer-events:none;z-index:999}
+.flash.show{transform:translateY(0);opacity:1}
+#progress-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#progress-overlay.show{display:flex}
+#progress-overlay p{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.1em}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#export-snapshot{display:none;position:fixed;left:-9999px;top:0;background:#fff;padding:36px 44px;font-family:'JetBrains Mono',monospace;color:#111;width:1200px}
+#export-snapshot h2{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:600;color:#111;margin-bottom:4px}
+#export-snapshot .sub{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#777;margin-bottom:24px}
+#export-snapshot table{width:100%;border-collapse:collapse;font-size:10px}
+#export-snapshot thead th{font-family:'Unbounded',sans-serif;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#3a6e00;padding:0 5px 8px;text-align:center;border-bottom:1.5px solid #ccc}
+#export-snapshot tbody tr{border-bottom:1px solid #eee}
+#export-snapshot tbody td{padding:5px 4px;text-align:center;color:#111;vertical-align:top}
+#export-snapshot tbody td.num{color:#aaa;font-size:10px;font-weight:600}
+#export-snapshot .snap-footer{margin-top:16px;font-size:9px;color:#bbb;letter-spacing:.08em;text-align:right}
+#export-snapshot .accent-bar{height:3px;background:#c8f060;border-radius:2px;margin-bottom:18px}
+#export-snapshot .cell-block{text-align:left}
+#export-snapshot .cell-subj{font-size:10px;font-weight:600;color:#111}
+#export-snapshot .cell-teacher{font-size:9px;color:#666;margin-top:2px}
+#export-snapshot .cell-room{font-size:9px;color:#999;margin-top:1px}
+
+/* ══════════ MOBILE ══════════ */
+@media(max-width:680px){
+  body{padding:1rem .75rem 5rem}
+
+  /* header compact */
+  header{flex-direction:column;align-items:flex-start;gap:.6rem;margin-bottom:1rem}
+  h1{font-size:16px}
+  .badge{font-size:8px;padding:2px 7px}
+  .header-actions{width:100%;display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;align-items:center}
+  .week-tabs{grid-column:1/-1;display:flex}
+  .week-tab{flex:1;text-align:center;font-size:11px;padding:7px 8px}
+  .btn{font-size:11px;padding:7px 10px}
+  .btn-icon{padding:7px 10px;font-size:14px}
+  /* hide desktop-only buttons on mobile */
+  .export-wrap{grid-column:span 2}
+  .export-wrap .btn-accent{width:100%}
+
+  /* hide desktop table & footer */
+  .table-wrap{display:none!important}
+  .footer-bar{display:none!important}
+
+  /* reminder chips wrap */
+  .rchips{flex-wrap:wrap;gap:5px}
+  #rem-settings{flex-direction:column;align-items:flex-start;gap:10px}
+  .stoggle{margin-left:0}
+
+  /* toast */
+  .alert-toast{top:auto;bottom:76px;right:10px;left:10px;max-width:none;transform:translateY(140px)}
+  .alert-toast.show{transform:translateY(0)}
+
+  /* ── DAY SWITCHER ── */
+  .mob-day-bar{display:flex!important;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px}
+  .mob-day-nav{background:none;border:none;color:var(--accent);font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px;transition:background .12s}
+  .mob-day-nav:hover{background:var(--border)}
+  .mob-day-label{font-family:var(--head);font-size:13px;font-weight:600;color:var(--text);letter-spacing:.06em;text-align:center;flex:1}
+  .mob-day-dots{display:flex;gap:5px;justify-content:center;margin-top:4px}
+  .mob-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background .15s}
+  .mob-dot.on{background:var(--accent)}
+
+  /* ── LESSON CARDS ── */
+  .mob-cards{display:flex!important;flex-direction:column;gap:8px;margin-bottom:16px}
+  .mob-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 12px 10px;display:flex;gap:10px;align-items:flex-start;transition:border-color .15s}
+  .mob-card:focus-within{border-color:var(--accent)}
+  .mob-card-left{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:44px}
+  .mob-num{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.06em}
+  .mob-time{display:flex;flex-direction:column;gap:2px;align-items:center}
+  .mob-time input[type="time"]{width:58px;font-size:10px;padding:3px 4px;text-align:center;border-radius:4px}
+  .mob-time-sep{font-size:9px;color:var(--border2)}
+  .mob-card-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .mob-subj input{font-size:14px;font-weight:600;width:100%;color:var(--text)}
+  .mob-meta{display:flex;gap:6px}
+  .mob-meta input{font-size:11px;color:var(--muted)}
+  .mob-meta .room-inp{max-width:72px}
+  .mob-del{background:none;border:none;color:var(--border2);font-size:15px;cursor:pointer;padding:2px 4px;border-radius:3px;align-self:flex-start;flex-shrink:0;margin-top:1px;transition:color .12s}
+  .mob-del:hover{color:var(--danger)}
+
+  /* ── FLOATING ADD ── */
+  .mob-fab{display:flex!important;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:300;gap:10px}
+  .mob-fab-btn{font-family:var(--mono);font-size:12px;font-weight:600;padding:11px 22px;border-radius:28px;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.35);white-space:nowrap;letter-spacing:.04em;transition:all .15s}
+  .mob-fab-add{background:var(--accent);color:#0f0f0f}
+  .mob-fab-save{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+}
+@media(min-width:681px){
+  .mob-day-bar,.mob-cards,.mob-fab{display:none!important}
+}
+</style>
 </head>
 <body>
-<canvas width="320" height="640" id="game"></canvas>
+
+<header>
+  <div>
+    <div class="logo-label">// навчальний заклад</div>
+    <h1>Розклад уроків <span class="badge" id="weekBadge">Тиждень А</span></h1>
+  </div>
+  <div class="header-actions">
+    <div class="week-tabs">
+      <button class="week-tab active" id="tabA" onclick="switchWeek('A')">Тиждень А</button>
+      <button class="week-tab" id="tabB" onclick="switchWeek('B')">Тиждень Б</button>
+    </div>
+    <button class="btn btn-icon" id="themeBtn" onclick="toggleTheme()" title="Змінити тему">🌙</button>
+    <button class="btn btn-icon" id="remBtn" onclick="toggleReminder()" title="Нагадування">🔔</button>
+    <button class="btn" onclick="clearAll()">Очистити</button>
+    <button class="btn" onclick="loadData()">↑ Завантажити</button>
+    <button class="btn btn-primary" onclick="saveData()">↓ Зберегти</button>
+    <div class="export-wrap" id="exportWrap">
+      <button class="btn btn-accent" onclick="toggleExportMenu()">⬇ Експорт ▾</button>
+      <div class="export-menu" id="exportMenu">
+        <button onclick="exportPNG()">🖼&nbsp; Зберегти PNG</button>
+        <hr>
+        <button onclick="exportPDF()">📄&nbsp; Зберегти PDF</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- reminder bar -->
+<div id="reminder-bar">
+  <div class="rem-main">
+    <div class="rem-dot"></div>
+    <span id="rem-text">—</span>
+    <div class="rem-actions">
+      <button class="rem-icon-btn" id="rem-settings-btn" onclick="toggleRemSettings()" title="Налаштування">⚙</button>
+      <button class="rem-icon-btn" onclick="closeReminder()" title="Закрити">✕</button>
+    </div>
+  </div>
+  <div id="rem-settings">
+    <div class="rsec">
+      <span class="rsec-label">Нагадувати за:</span>
+      <div class="rchips">
+        <button class="rchip" id="chip0" onclick="toggleMute()">не нагадувати</button>
+        <button class="rchip" id="chip1" onclick="toggleChip(1)">1 хв</button>
+        <button class="rchip" id="chip2" onclick="toggleChip(2)">2 хв</button>
+        <button class="rchip" id="chip3" onclick="toggleChip(3)">3 хв</button>
+        <button class="rchip" id="chip4" onclick="toggleChip(4)">4 хв</button>
+        <button class="rchip" id="chip5" onclick="toggleChip(5)">5 хв</button>
+      </div>
+    </div>
+    <div class="stoggle">
+      <span class="stoggle-label">Звук:</span>
+      <label class="sw">
+        <input type="checkbox" id="soundToggle" checked onchange="saveSoundPref()">
+        <div class="sw-track"></div>
+        <div class="sw-thumb"></div>
+      </label>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="testSound()">▶ Тест</button>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ══ MOBILE VIEW ══ -->
+  <div class="mob-day-bar" style="display:none">
+    <button class="mob-day-nav" onclick="mobShift(-1)">&#8249;</button>
+    <div style="flex:1;text-align:center">
+      <div class="mob-day-label" id="mobDayLabel">Понеділок</div>
+      <div class="mob-day-dots" id="mobDots"></div>
+    </div>
+    <button class="mob-day-nav" onclick="mobShift(1)">&#8250;</button>
+  </div>
+  <div class="mob-cards" style="display:none" id="mobCards"></div>
+  <div class="mob-fab" style="display:none">
+    <button class="mob-fab-btn mob-fab-save" onclick="saveData()">↓ Зберегти</button>
+    <button class="mob-fab-btn mob-fab-add" onclick="mobAddRow()">+ Урок</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="schedule">
+      <colgroup>
+        <col style="width:26px">
+        <col style="width:66px"><col style="width:66px">
+        <col style="width:10.5%"><col style="width:8.5%"><col style="width:4.5%">
+        <col style="width:10.5%"><col style="width:8.5%"><col style="width:4.5%">
+        <col style="width:10.5%"><col style="width:8.5%"><col style="width:4.5%">
+        <col style="width:10.5%"><col style="width:8.5%"><col style="width:4.5%">
+        <col style="width:10.5%"><col style="width:8.5%"><col style="width:4.5%">
+        <col style="width:26px">
+      </colgroup>
+      <thead>
+        <tr>
+          <th rowspan="2">#</th>
+          <th rowspan="2">Початок</th>
+          <th rowspan="2">Кінець</th>
+          <th colspan="3" class="day-header" id="dh0">Пн</th>
+          <th colspan="3" class="day-header" id="dh1">Вт</th>
+          <th colspan="3" class="day-header" id="dh2">Ср</th>
+          <th colspan="3" class="day-header" id="dh3">Чт</th>
+          <th colspan="3" class="day-header" id="dh4">Пт</th>
+          <th rowspan="2"></th>
+        </tr>
+        <tr class="sub-headers">
+          <th class="sh0">Предмет</th><th class="sh0">Вчитель</th><th class="sh0">Каб.</th>
+          <th class="sh1">Предмет</th><th class="sh1">Вчитель</th><th class="sh1">Каб.</th>
+          <th class="sh2">Предмет</th><th class="sh2">Вчитель</th><th class="sh2">Каб.</th>
+          <th class="sh3">Предмет</th><th class="sh3">Вчитель</th><th class="sh3">Каб.</th>
+          <th class="sh4">Предмет</th><th class="sh4">Вчитель</th><th class="sh4">Каб.</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="footer-bar">
+    <div class="counter">Тиждень <strong id="weekLabel">А</strong> · Уроків: <strong id="counter">0</strong></div>
+    <button class="btn btn-accent" onclick="addRow()">+ Додати урок</button>
+  </div>
+</main>
+
+<!-- alert toast -->
+<div class="alert-toast" id="alertToast">
+  <span class="alert-toast-icon">🔔</span>
+  <div class="alert-toast-body">
+    <div class="alert-toast-title" id="toastTitle">Нагадування</div>
+    <div class="alert-toast-msg" id="toastMsg">—</div>
+  </div>
+  <button class="alert-toast-close" onclick="closeToast()">✕</button>
+</div>
+
+<!-- export snapshot -->
+<div id="export-snapshot">
+  <div class="accent-bar"></div>
+  <h2>Розклад уроків — Тиждень <span id="snap-week">А</span></h2>
+  <div class="sub">// навчальний заклад</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28px">#</th>
+        <th style="width:64px">Початок</th>
+        <th style="width:64px">Кінець</th>
+        <th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th>
+      </tr>
+    </thead>
+    <tbody id="snap-tbody"></tbody>
+  </table>
+  <div class="snap-footer" id="snap-footer"></div>
+</div>
+
+<datalist id="subjectsList"></datalist>
+<datalist id="teachersList"></datalist>
+<div class="flash" id="flash">Збережено ✓</div>
+<div id="progress-overlay"><div class="spinner"></div><p id="progress-text">Генеруємо файл...</p></div>
+
 <script>
-// https://tetris.fandom.com/wiki/Tetris_Guideline
+/* ══ STATE ══ */
+let currentWeek='A', lessonCount=0, isLight=false;
+let remindInterval=null, remOpen=false;
+// which minutes to fire: Set of 1 and/or 2
+let remMinutes=new Set([1]);
+let firedAlerts={};  // key: "hh:mm-N" → true, resets each day
 
-// get a random integer between the range of [min,max]
-// @see https://stackoverflow.com/a/1527820/2124254
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
+const tbody=document.getElementById('tbody');
+const subjList=document.getElementById('subjectsList');
+const teachList=document.getElementById('teachersList');
+const counterEl=document.getElementById('counter');
+const weekLabel=document.getElementById('weekLabel');
+const weekBadge=document.getElementById('weekBadge');
+const flash=document.getElementById('flash');
+const overlay=document.getElementById('progress-overlay');
+const progressText=document.getElementById('progress-text');
+const remBar=document.getElementById('reminder-bar');
+const remText=document.getElementById('rem-text');
 
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+/* ══ SOUND ══ */
+let audioCtx=null;
+function getAudioCtx(){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function playNotifSound(){
+  if(!document.getElementById('soundToggle').checked) return;
+  try{
+    const ctx=getAudioCtx();
+    // two-tone chime: C5 then E5
+    [[523.25,0],[659.25,0.18]].forEach(([freq,delay])=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine'; osc.frequency.value=freq;
+      const t=ctx.currentTime+delay;
+      gain.gain.setValueAtTime(0,t);
+      gain.gain.linearRampToValueAtTime(0.35,t+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+      osc.start(t); osc.stop(t+0.5);
+    });
+  }catch(e){}
+}
+function testSound(){
+  try{ getAudioCtx().resume().then(()=>playNotifSound()); }catch(e){}
+}
+function saveSoundPref(){
+  localStorage.setItem('sch_sound', document.getElementById('soundToggle').checked?'1':'0');
 }
 
-// generate a new tetromino sequence
-// @see https://tetris.fandom.com/wiki/Random_Generator
-function generateSequence() {
-  const sequence = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+/* ══ TOAST ══ */
+let toastTimer=null;
+function showToast(title, msg){
+  document.getElementById('toastTitle').textContent=title;
+  document.getElementById('toastMsg').textContent=msg;
+  const t=document.getElementById('alertToast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),7000);
+  playNotifSound();
+}
+function closeToast(){ document.getElementById('alertToast').classList.remove('show'); }
 
-  while (sequence.length) {
-    const rand = getRandomInt(0, sequence.length - 1);
-    const name = sequence.splice(rand, 1)[0];
-    tetrominoSequence.push(name);
+/* ══ THEME ══ */
+function toggleTheme(){
+  isLight=!isLight;
+  document.body.classList.toggle('light',isLight);
+  document.getElementById('themeBtn').textContent=isLight?'☀️':'🌙';
+  localStorage.setItem('sch_theme',isLight?'light':'dark');
+}
+
+/* ══ WEEK A/B ══ */
+function switchWeek(w){
+  saveCurrentWeekData();
+  currentWeek=w;
+  document.getElementById('tabA').classList.toggle('active',w==='A');
+  document.getElementById('tabB').classList.toggle('active',w==='B');
+  const label=w==='A'?'А':'Б';
+  weekLabel.textContent=label; weekBadge.textContent='Тиждень '+label;
+  firedAlerts={};
+  loadWeekData(w); updateDatalist();
+}
+
+/* ══ REMINDER CHIPS ══ */
+let isMuted=false;
+function toggleMute(){
+  isMuted=!isMuted;
+  document.getElementById('chip0').classList.toggle('on',isMuted);
+  if(isMuted){
+    remMinutes.clear();
+    [1,2,3,4,5].forEach(n=>document.getElementById('chip'+n).classList.remove('on'));
+  }
+  saveChips();
+}
+function toggleChip(n){
+  isMuted=false;
+  document.getElementById('chip0').classList.remove('on');
+  if(remMinutes.has(n)){
+    remMinutes.delete(n);
+    if(remMinutes.size===0){ isMuted=true; document.getElementById('chip0').classList.add('on'); }
+  } else { remMinutes.add(n); }
+  document.getElementById('chip'+n).classList.toggle('on',remMinutes.has(n));
+  saveChips();
+}
+function saveChips(){
+  localStorage.setItem('sch_rem_mins',JSON.stringify([...remMinutes]));
+  localStorage.setItem('sch_rem_muted',isMuted?'1':'0');
+}
+function loadChips(){
+  const savedMuted=localStorage.getItem('sch_rem_muted');
+  const saved=localStorage.getItem('sch_rem_mins');
+  if(savedMuted==='1'){ isMuted=true; remMinutes.clear(); document.getElementById('chip0').classList.add('on'); }
+  else {
+    if(saved){ try{ remMinutes=new Set(JSON.parse(saved)); }catch(e){} }
+    [1,2,3,4,5].forEach(n=>document.getElementById('chip'+n).classList.toggle('on',remMinutes.has(n)));
   }
 }
 
-// get the next tetromino in the sequence
-function getNextTetromino() {
-  if (tetrominoSequence.length === 0) {
-    generateSequence();
-  }
-
-  const name = tetrominoSequence.pop();
-  const matrix = tetrominos[name];
-
-  // I and O start centered, all others start in left-middle
-  const col = playfield[0].length / 2 - Math.ceil(matrix[0].length / 2);
-
-  // I starts on row 21 (-1), all others start on row 22 (-2)
-  const row = name === 'I' ? -1 : -2;
-
-  return {
-    name: name,      // name of the piece (L, O, etc.)
-    matrix: matrix,  // the current rotation matrix
-    row: row,        // current row (starts offscreen)
-    col: col         // current col
-  };
+/* ══ REMINDER BAR ══ */
+function toggleReminder(){
+  if(remOpen){ closeReminder(); return; }
+  remOpen=true; remBar.classList.add('show');
+  tickReminder();
+  remindInterval=setInterval(tickReminder, 30000);
+}
+function closeReminder(){
+  remOpen=false; remBar.classList.remove('show');
+  document.getElementById('rem-settings').classList.remove('open');
+  clearInterval(remindInterval);
+}
+function toggleRemSettings(){
+  document.getElementById('rem-settings').classList.toggle('open');
 }
 
-// rotate an NxN matrix 90deg
-// @see https://codereview.stackexchange.com/a/186834
-function rotate(matrix) {
-  const N = matrix.length - 1;
-  const result = matrix.map((row, i) =>
-    row.map((val, j) => matrix[N - j][i])
-  );
-
-  return result;
+function tickReminder(){
+  const now=new Date();
+  const hm=now.getHours()*60+now.getMinutes();
+  const dayIdx=now.getDay()-1;
+  if(dayIdx<0||dayIdx>4){ remText.textContent='Сьогодні вихідний — уроків немає 🎉'; return; }
+  const rows=tbody.querySelectorAll('tr');
+  let nextLesson=null, nextMins=Infinity;
+  rows.forEach(row=>{
+    const inp=row.querySelectorAll('input');
+    const startVal=inp[0].value; if(!startVal) return;
+    const [h,m]=startVal.split(':').map(Number);
+    const diff=h*60+m-hm;
+    if(diff>0&&diff<nextMins){
+      nextMins=diff;
+      const subj=inp[2+dayIdx*3]?.value||'—';
+      const teacher=inp[3+dayIdx*3]?.value||'';
+      const room=inp[4+dayIdx*3]?.value||'';
+      nextLesson={subj,teacher,room,startVal,diff};
+    }
+  });
+  if(!nextLesson){ remText.textContent='На сьогодні уроки закінчились ✓'; return; }
+  const h=Math.floor(nextLesson.diff/60), m=nextLesson.diff%60;
+  let msg=`Наступний: ${nextLesson.subj}`;
+  if(nextLesson.teacher) msg+=` · ${nextLesson.teacher}`;
+  if(nextLesson.room) msg+=` · каб. ${nextLesson.room}`;
+  msg+=` (${nextLesson.startVal}) — через `;
+  if(h>0) msg+=`${h} год `;
+  msg+=`${m} хв`;
+  remText.textContent=msg;
 }
 
-// check to see if the new matrix/row/col is valid
-function isValidMove(matrix, cellRow, cellCol) {
-  for (let row = 0; row < matrix.length; row++) {
-    for (let col = 0; col < matrix[row].length; col++) {
-      if (matrix[row][col] && (
-          // outside the game bounds
-          cellCol + col < 0 ||
-          cellCol + col >= playfield[0].length ||
-          cellRow + row >= playfield.length ||
-          // collides with another piece
-          playfield[cellRow + row][cellCol + col])
-        ) {
-        return false;
+/* check if it's time to fire a notification */
+function checkAlerts(){
+  if(isMuted) return;
+  const now=new Date();
+  const todayKey=now.toDateString();
+  // reset fired map on new day
+  if(firedAlerts._day!==todayKey){ firedAlerts={_day:todayKey}; }
+  const hm=now.getHours()*60+now.getMinutes();
+  const dayIdx=now.getDay()-1;
+  if(dayIdx<0||dayIdx>4) return;
+  tbody.querySelectorAll('tr').forEach(row=>{
+    const inp=row.querySelectorAll('input');
+    const startVal=inp[0].value; if(!startVal) return;
+    const [h,m]=startVal.split(':').map(Number);
+    const lessonMin=h*60+m;
+    const subj=inp[2+dayIdx*3]?.value||'—';
+    const teacher=inp[3+dayIdx*3]?.value||'';
+    const room=inp[4+dayIdx*3]?.value||'';
+    remMinutes.forEach(ahead=>{
+      const key=startVal+'-'+ahead;
+      if(!firedAlerts[key] && hm===lessonMin-ahead){
+        firedAlerts[key]=true;
+        let details=subj;
+        if(teacher) details+=` · ${teacher}`;
+        if(room) details+=` · каб. ${room}`;
+        showToast(`Урок через ${ahead} хв`, details+` о ${startVal}`);
       }
-    }
-  }
-
-  return true;
+    });
+  });
 }
 
-// place the tetromino on the playfield
-function placeTetromino() {
-  for (let row = 0; row < tetromino.matrix.length; row++) {
-    for (let col = 0; col < tetromino.matrix[row].length; col++) {
-      if (tetromino.matrix[row][col]) {
-
-        // game over if piece has any part offscreen
-        if (tetromino.row + row < 0) {
-          return showGameOver();
-        }
-
-        playfield[tetromino.row + row][tetromino.col + col] = tetromino.name;
-      }
+/* ══ DATALISTS ══ */
+function updateDatalist(){
+  // always read from the hidden table (source of truth for both desktop and mobile)
+  const subjs=new Set(), teachers=new Set();
+  tbody.querySelectorAll('tr').forEach(row=>{
+    const inp=row.querySelectorAll('input');
+    for(let d=0;d<5;d++){
+      const s=(inp[2+d*3]?.value||'').trim(); if(s) subjs.add(s);
+      const t=(inp[3+d*3]?.value||'').trim(); if(t) teachers.add(t);
     }
-  }
-
-  // check for line clears starting from the bottom and working our way up
-  for (let row = playfield.length - 1; row >= 0; ) {
-    if (playfield[row].every(cell => !!cell)) {
-
-      // drop every row above this one
-      for (let r = row; r >= 0; r--) {
-        for (let c = 0; c < playfield[r].length; c++) {
-          playfield[r][c] = playfield[r-1][c];
-        }
-      }
-    }
-    else {
-      row--;
-    }
-  }
-
-  tetromino = getNextTetromino();
+  });
+  subjList.innerHTML=''; subjs.forEach(s=>{const o=document.createElement('option');o.value=s;subjList.appendChild(o)});
+  teachList.innerHTML=''; teachers.forEach(s=>{const o=document.createElement('option');o.value=s;teachList.appendChild(o)});
 }
 
-// show the game over screen
-function showGameOver() {
-  cancelAnimationFrame(rAF);
-  gameOver = true;
-
-  context.fillStyle = 'black';
-  context.globalAlpha = 0.75;
-  context.fillRect(0, canvas.height / 2 - 30, canvas.width, 60);
-
-  context.globalAlpha = 1;
-  context.fillStyle = 'white';
-  context.font = '36px monospace';
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+/* ══ INPUTS ══ */
+function mkSubj(val=''){
+  const i=document.createElement('input');
+  i.type='text';i.className='cell-inp subj';i.setAttribute('list','subjectsList');
+  i.autocomplete='off';i.placeholder='Предмет';i.value=val;
+  i.addEventListener('change',updateDatalist);i.addEventListener('blur',updateDatalist);return i;
+}
+function mkTeacher(val=''){
+  const i=document.createElement('input');
+  i.type='text';i.className='cell-inp teacher';i.setAttribute('list','teachersList');
+  i.autocomplete='off';i.placeholder='Вчитель';i.value=val;
+  i.addEventListener('change',updateDatalist);i.addEventListener('blur',updateDatalist);return i;
+}
+function mkRoom(val=''){
+  const i=document.createElement('input');
+  i.type='text';i.className='cell-inp room';i.placeholder='Каб.';i.value=val;return i;
 }
 
-const canvas = document.getElementById('game');
-const context = canvas.getContext('2d');
-const grid = 32;
-const tetrominoSequence = [];
-
-// keep track of what is in every cell of the game using a 2d array
-// tetris playfield is 10x20, with a few rows offscreen
-const playfield = [];
-
-// populate the empty state
-for (let row = -2; row < 20; row++) {
-  playfield[row] = [];
-
-  for (let col = 0; col < 10; col++) {
-    playfield[row][col] = 0;
+/* ══ ROW ══ */
+function addRow(data={}){
+  lessonCount++;
+  const row=tbody.insertRow();
+  const n=row.insertCell(0);n.className='num';n.textContent=lessonCount;
+  const sc=row.insertCell(1);sc.className='time-cell';
+  const si=document.createElement('input');si.type='time';si.value=data.start||'';sc.appendChild(si);
+  const ec=row.insertCell(2);ec.className='time-cell';
+  const ei=document.createElement('input');ei.type='time';ei.value=data.end||'';ec.appendChild(ei);
+  const days=data.days||[{},{},{},{},{}];
+  for(let d=0;d<5;d++){
+    const dd=days[d]||{};
+    row.insertCell(3+d*3).appendChild(mkSubj(dd.subj||''));
+    row.insertCell(4+d*3).appendChild(mkTeacher(dd.teacher||''));
+    row.insertCell(5+d*3).appendChild(mkRoom(dd.room||''));
   }
+  // mark today columns
+  const _td=new Date().getDay()-1;
+  if(_td>=0&&_td<=4){[3+_td*3,4+_td*3,5+_td*3].forEach(ci=>{if(row.cells[ci])row.cells[ci].classList.add('today-col');});}
+  const dc=row.insertCell(18);dc.className='del-cell';
+  const db=document.createElement('button');db.className='del';db.innerHTML='&#x2715;';db.title='Видалити';
+  db.onclick=()=>{row.remove();updateNumbers();updateDatalist();};
+  dc.appendChild(db);
+  updateCounter();return row;
 }
-
-// how to draw each tetromino
-// @see https://tetris.fandom.com/wiki/SRS
-const tetrominos = {
-  'I': [
-    [0,0,0,0],
-    [1,1,1,1],
-    [0,0,0,0],
-    [0,0,0,0]
-  ],
-  'J': [
-    [1,0,0],
-    [1,1,1],
-    [0,0,0],
-  ],
-  'L': [
-    [0,0,1],
-    [1,1,1],
-    [0,0,0],
-  ],
-  'O': [
-    [1,1],
-    [1,1],
-  ],
-  'S': [
-    [0,1,1],
-    [1,1,0],
-    [0,0,0],
-  ],
-  'Z': [
-    [1,1,0],
-    [0,1,1],
-    [0,0,0],
-  ],
-  'T': [
-    [0,1,0],
-    [1,1,1],
-    [0,0,0],
-  ]
-};
-
-// color of each tetromino
-const colors = {
-  'I': 'cyan',
-  'O': 'yellow',
-  'T': 'purple',
-  'S': 'green',
-  'Z': 'red',
-  'J': 'blue',
-  'L': 'orange'
-};
-
-let count = 0;
-let tetromino = getNextTetromino();
-let rAF = null;  // keep track of the animation frame so we can cancel it
-let gameOver = false;
-
-// game loop
-function loop() {
-  rAF = requestAnimationFrame(loop);
-  context.clearRect(0,0,canvas.width,canvas.height);
-
-  // draw the playfield
-  for (let row = 0; row < 20; row++) {
-    for (let col = 0; col < 10; col++) {
-      if (playfield[row][col]) {
-        const name = playfield[row][col];
-        context.fillStyle = colors[name];
-
-        // drawing 1 px smaller than the grid creates a grid effect
-        context.fillRect(col * grid, row * grid, grid-1, grid-1);
-      }
-    }
-  }
-
-  // draw the active tetromino
-  if (tetromino) {
-
-    // tetromino falls every 35 frames
-    if (++count > 35) {
-      tetromino.row++;
-      count = 0;
-
-      // place piece if it runs into anything
-      if (!isValidMove(tetromino.matrix, tetromino.row, tetromino.col)) {
-        tetromino.row--;
-        placeTetromino();
-      }
-    }
-
-    context.fillStyle = colors[tetromino.name];
-
-    for (let row = 0; row < tetromino.matrix.length; row++) {
-      for (let col = 0; col < tetromino.matrix[row].length; col++) {
-        if (tetromino.matrix[row][col]) {
-
-          // drawing 1 px smaller than the grid creates a grid effect
-          context.fillRect((tetromino.col + col) * grid, (tetromino.row + row) * grid, grid-1, grid-1);
-        }
-      }
-    }
-  }
+function updateNumbers(){
+  lessonCount=0;
+  tbody.querySelectorAll('tr').forEach(r=>{lessonCount++;r.cells[0].textContent=lessonCount;});
+  updateCounter();
 }
+function updateCounter(){counterEl.textContent=tbody.querySelectorAll('tr').length;}
 
-// listen to keyboard events to move the active tetromino
-document.addEventListener('keydown', function(e) {
-  if (gameOver) return;
+/* ══ SAVE / LOAD ══ */
+function getRowData(row){
+  const inp=row.querySelectorAll('input');
+  const days=[];
+  for(let d=0;d<5;d++) days.push({subj:inp[2+d*3]?.value||'',teacher:inp[3+d*3]?.value||'',room:inp[4+d*3]?.value||''});
+  return{start:inp[0].value,end:inp[1].value,days};
+}
+function saveCurrentWeekData(){
+  const data=[];
+  tbody.querySelectorAll('tr').forEach(r=>data.push(getRowData(r)));
+  localStorage.setItem('sch_week_'+currentWeek,JSON.stringify(data));
+}
+function saveData(){saveCurrentWeekData();showFlash('Збережено ✓');}
+function loadWeekData(w){
+  const raw=localStorage.getItem('sch_week_'+w);
+  tbody.innerHTML='';lessonCount=0;
+  if(raw){try{JSON.parse(raw).forEach(d=>addRow(d));}catch(e){for(let i=0;i<5;i++)addRow();}}
+  else{for(let i=0;i<5;i++)addRow();}
+  updateCounter();
+  highlightToday();
+}
+function loadData(){loadWeekData(currentWeek);updateDatalist();}
+function clearAll(){
+  if(!confirm('Очистити розклад тижня '+(currentWeek==='A'?'А':'Б')+'?'))return;
+  tbody.innerHTML='';lessonCount=0;updateCounter();updateDatalist();
+}
+function showFlash(msg){flash.textContent=msg;flash.classList.add('show');setTimeout(()=>flash.classList.remove('show'),2000);}
 
-  // left and right arrow keys (move)
-  if (e.which === 37 || e.which === 39) {
-    const col = e.which === 37
-      ? tetromino.col - 1
-      : tetromino.col + 1;
-
-    if (isValidMove(tetromino.matrix, tetromino.row, col)) {
-      tetromino.col = col;
-    }
-  }
-
-  // up arrow key (rotate)
-  if (e.which === 38) {
-    const matrix = rotate(tetromino.matrix);
-    if (isValidMove(matrix, tetromino.row, tetromino.col)) {
-      tetromino.matrix = matrix;
-    }
-  }
-
-  // down arrow key (drop)
-  if(e.which === 40) {
-    const row = tetromino.row + 1;
-
-    if (!isValidMove(tetromino.matrix, row, tetromino.col)) {
-      tetromino.row = row - 1;
-
-      placeTetromino();
-      return;
-    }
-
-    tetromino.row = row;
-  }
+/* ══ EXPORT ══ */
+function toggleExportMenu(){document.getElementById('exportMenu').classList.toggle('open');}
+document.addEventListener('click',e=>{
+  if(!document.getElementById('exportWrap').contains(e.target))
+    document.getElementById('exportMenu').classList.remove('open');
 });
+function buildSnapshot(){
+  document.getElementById('snap-week').textContent=currentWeek==='A'?'А':'Б';
+  const snapTbody=document.getElementById('snap-tbody');snapTbody.innerHTML='';
+  tbody.querySelectorAll('tr').forEach((row,idx)=>{
+    const inp=row.querySelectorAll('input');
+    const tr=document.createElement('tr');
+    const nc=document.createElement('td');nc.className='num';nc.textContent=idx+1;tr.appendChild(nc);
+    [0,1].forEach(i=>{const td=document.createElement('td');td.textContent=inp[i].value||'—';tr.appendChild(td);});
+    for(let d=0;d<5;d++){
+      const s=inp[2+d*3]?.value||'',t=inp[3+d*3]?.value||'',r=inp[4+d*3]?.value||'';
+      const td=document.createElement('td');
+      td.innerHTML=`<div class="cell-block"><div class="cell-subj">${s||'—'}</div>${t?`<div class="cell-teacher">${t}</div>`:''}${r?`<div class="cell-room">каб. ${r}</div>`:''}</div>`;
+      tr.appendChild(td);
+    }
+    snapTbody.appendChild(tr);
+  });
+  document.getElementById('snap-footer').textContent='Сформовано: '+new Date().toLocaleDateString('uk-UA',{day:'2-digit',month:'long',year:'numeric'});
+}
+async function exportPNG(){
+  document.getElementById('exportMenu').classList.remove('open');buildSnapshot();
+  const snap=document.getElementById('export-snapshot');snap.style.display='block';overlay.classList.add('show');
+  progressText.textContent='Рендеримо зображення...';await new Promise(r=>setTimeout(r,100));
+  try{const c=await html2canvas(snap,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});const a=document.createElement('a');a.download='розклад.png';a.href=c.toDataURL('image/png');a.click();}catch(e){alert('Помилка: '+e.message);}
+  snap.style.display='none';overlay.classList.remove('show');
+}
+async function exportPDF(){
+  document.getElementById('exportMenu').classList.remove('open');buildSnapshot();
+  const snap=document.getElementById('export-snapshot');snap.style.display='block';overlay.classList.add('show');
+  progressText.textContent='Генеруємо PDF...';await new Promise(r=>setTimeout(r,100));
+  try{
+    const c=await html2canvas(snap,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
+    const imgData=c.toDataURL('image/png');const{jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    const mw=pw-20,mh=ph-20,ratio=c.height/c.width;
+    let iw=mw,ih=mw*ratio;if(ih>mh){ih=mh;iw=mh/ratio;}
+    pdf.addImage(imgData,'PNG',(pw-iw)/2,(ph-ih)/2,iw,ih);pdf.save('розклад.pdf');
+  }catch(e){alert('Помилка: '+e.message);}
+  snap.style.display='none';overlay.classList.remove('show');
+}
 
-// start the game
-rAF = requestAnimationFrame(loop);
+
+/* ══════════ MOBILE CARDS ══════════ */
+const DAY_NAMES = ['Понеділок','Вівторок','Середа','Четвер','П\'ятниця'];
+const DAY_SHORT  = ['Пн','Вт','Ср','Чт','Пт'];
+let mobDay = Math.max(0, Math.min(4, (new Date().getDay() || 1) - 1));
+
+function mobIsMobile(){ return window.innerWidth <= 680; }
+function mobShift(d){ mobDay=(mobDay+d+5)%5; mobRender(); }
+
+function mobRender(){
+  if(!mobIsMobile()) return;
+  if(document.activeElement && document.getElementById('mobCards')?.contains(document.activeElement)) return;
+  // dots
+  const dotsEl=document.getElementById('mobDots');
+  dotsEl.innerHTML=DAY_SHORT.map((n,i)=>
+    `<span class="mob-dot${i===mobDay?' on':''}" onclick="mobDay=${i};mobRender()" title="${DAY_NAMES[i]}"></span>`
+  ).join('');
+  document.getElementById('mobDayLabel').textContent=DAY_NAMES[mobDay];
+
+  const container=document.getElementById('mobCards');
+  container.innerHTML='';
+  const rows=tbody.querySelectorAll('tr');
+  if(!rows.length){
+    container.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:12px;letter-spacing:.06em">Уроків немає — натисни + Урок</div>';
+    return;
+  }
+  rows.forEach((row,idx)=>{
+    const inp=row.querySelectorAll('input');
+    const di=mobDay;
+    const card=document.createElement('div');
+    card.className='mob-card';
+
+    // left: number + time
+    const left=document.createElement('div');
+    left.className='mob-card-left';
+    const numEl=document.createElement('span');
+    numEl.className='mob-num'; numEl.textContent=idx+1;
+    left.appendChild(numEl);
+    const timeWrap=document.createElement('div');
+    timeWrap.className='mob-time';
+    const t0=document.createElement('input'); t0.type='time'; t0.value=inp[0].value; t0.title='Початок';
+    t0.addEventListener('change',e=>{ inp[0].value=e.target.value; });
+    const sep=document.createElement('span'); sep.className='mob-time-sep'; sep.textContent='↓';
+    const t1=document.createElement('input'); t1.type='time'; t1.value=inp[1].value; t1.title='Кінець';
+    t1.addEventListener('change',e=>{ inp[1].value=e.target.value; });
+    timeWrap.append(t0,sep,t1);
+    left.appendChild(timeWrap);
+
+    // body: subj + teacher + room
+    const body=document.createElement('div');
+    body.className='mob-card-body';
+
+    const subjWrap=document.createElement('div'); subjWrap.className='mob-subj';
+    const subjInp=document.createElement('input'); subjInp.type='text';
+    subjInp.setAttribute('list','subjectsList'); subjInp.autocomplete='off';
+    subjInp.placeholder='Предмет'; subjInp.value=inp[2+di*3]?.value||'';
+    subjInp.className='cell-inp';
+    subjInp.addEventListener('input',e=>{ if(inp[2+di*3]) inp[2+di*3].value=e.target.value; updateDatalist(); });
+    subjWrap.appendChild(subjInp);
+
+    const metaWrap=document.createElement('div'); metaWrap.className='mob-meta';
+    const teachInp=document.createElement('input'); teachInp.type='text';
+    teachInp.setAttribute('list','teachersList'); teachInp.autocomplete='off';
+    teachInp.placeholder='Вчитель'; teachInp.value=inp[3+di*3]?.value||'';
+    teachInp.className='cell-inp teacher'; teachInp.style.flex='1';
+    teachInp.addEventListener('input',e=>{ if(inp[3+di*3]) inp[3+di*3].value=e.target.value; updateDatalist(); });
+    const roomInp=document.createElement('input'); roomInp.type='text';
+    roomInp.placeholder='Каб.'; roomInp.value=inp[4+di*3]?.value||'';
+    roomInp.className='cell-inp room room-inp';
+    roomInp.addEventListener('input',e=>{ if(inp[4+di*3]) inp[4+di*3].value=e.target.value; });
+    metaWrap.append(teachInp,roomInp);
+    body.append(subjWrap,metaWrap);
+
+    // delete btn
+    const delBtn=document.createElement('button');
+    delBtn.className='mob-del'; delBtn.title='Видалити'; delBtn.textContent='✕';
+    delBtn.onclick=()=>{ row.remove(); updateNumbers(); updateDatalist(); setTimeout(mobRender,0); };
+
+    card.append(left,body,delBtn);
+    container.appendChild(card);
+  });
+}
+
+function mobAddRow(){
+  addRow();        // adds to hidden table
+  mobRender();     // reflect in cards
+}
+
+window.addEventListener('resize',()=>mobRender());
+
+
+/* ══ HIGHLIGHT TODAY ══ */
+function highlightToday(){
+  const today = new Date().getDay()-1; // 0=Mon..4=Fri, -1/5=weekend
+  for(let d=0;d<5;d++){
+    const isToday = d===today;
+    const dh=document.getElementById('dh'+d);
+    if(dh) dh.classList.toggle('today',isToday);
+    document.querySelectorAll('.sh'+d).forEach(el=>el.classList.toggle('today',isToday));
+    // body cells: each row has cells at indices 3+d*3, 4+d*3, 5+d*3
+    tbody.querySelectorAll('tr').forEach(row=>{
+      [3+d*3,4+d*3,5+d*3].forEach(ci=>{
+        if(row.cells[ci]) row.cells[ci].classList.toggle('today-col',isToday);
+      });
+    });
+  }
+}
+/* ══ INIT ══ */
+// theme
+const savedTheme=localStorage.getItem('sch_theme');
+if(savedTheme==='light'){isLight=true;document.body.classList.add('light');document.getElementById('themeBtn').textContent='☀️';}
+// sound
+const savedSound=localStorage.getItem('sch_sound');
+if(savedSound==='0') document.getElementById('soundToggle').checked=false;
+// chips
+loadChips();
+// schedule
+loadWeekData('A');
+updateDatalist();
+setTimeout(mobRender, 80);
+highlightToday();
+
+// poll every minute for alerts (background, even without reminder bar open)
+// always-on alert checker every 30s
+setInterval(checkAlerts, 30000);
+checkAlerts();
 </script>
 </body>
 </html>
